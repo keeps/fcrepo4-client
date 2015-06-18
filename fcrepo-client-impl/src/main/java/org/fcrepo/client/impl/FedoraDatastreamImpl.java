@@ -73,6 +73,7 @@ public class FedoraDatastreamImpl extends FedoraResourceImpl implements FedoraDa
     protected static final Property REST_API_DIGEST = createProperty(REPOSITORY_NAMESPACE + "digest");
     private boolean hasContent;
     private Node contentSubject;
+    private final String contentPath;
 
     /**
      * Constructor for FedoraDatastreamImpl
@@ -83,8 +84,14 @@ public class FedoraDatastreamImpl extends FedoraResourceImpl implements FedoraDa
      */
     public FedoraDatastreamImpl(final FedoraRepository repository, final HttpHelper httpHelper, final String path) {
         super(repository, httpHelper, path);
+        if (!path.endsWith("/" + FedoraJcrTypes.FCR_METADATA)) {
+            this.path = path + "/" + FedoraJcrTypes.FCR_METADATA;
+            subject = NodeFactory.createURI(repository.getRepositoryUrl()
+                    + this.path);
+        }
+        contentPath = this.path.substring(0, this.path.lastIndexOf("/"));
         contentSubject = NodeFactory.createURI(
-                repository.getRepositoryUrl() + path.substring(0, path.lastIndexOf("/")) );
+                repository.getRepositoryUrl() + contentPath );
     }
 
     @Override
@@ -105,8 +112,7 @@ public class FedoraDatastreamImpl extends FedoraResourceImpl implements FedoraDa
 
     @Override
     public FedoraObject getObject() throws FedoraException {
-        final String contentPath = path.substring(0, path.lastIndexOf("/"));
-        return repository.getObject( contentPath.substring(0, contentPath.lastIndexOf("/")) );
+        return repository.getObject( path );
     }
 
     @Override
@@ -162,7 +168,7 @@ public class FedoraDatastreamImpl extends FedoraResourceImpl implements FedoraDa
 
     @Override
     public void updateContent( final FedoraContent content ) throws FedoraException {
-        final HttpPut put = httpHelper.createContentPutMethod( path, null, content );
+        final HttpPut put = httpHelper.createContentPutMethod( contentPath, null, content );
 
         try {
             final HttpResponse response = httpHelper.execute( put );
@@ -203,7 +209,7 @@ public class FedoraDatastreamImpl extends FedoraResourceImpl implements FedoraDa
 
     @Override
     public InputStream getContent() throws FedoraException {
-        final HttpGet get = httpHelper.createGetMethod( path, null );
+        final HttpGet get = httpHelper.createGetMethod( contentPath, null );
         final String uri = get.getURI().toString();
 
         try {

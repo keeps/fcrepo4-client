@@ -16,14 +16,11 @@
 package org.fcrepo.client.utils;
 
 import static java.lang.Integer.MAX_VALUE;
-
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_FORBIDDEN;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
-
 import static org.apache.jena.riot.WebContent.contentTypeSPARQLUpdate;
-
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -64,18 +61,17 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.StandardHttpRequestRetryHandler;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
-
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.riot.RiotReader;
 import org.apache.jena.riot.lang.CollectorStreamTriples;
-
 import org.fcrepo.client.FedoraContent;
+import org.fcrepo.client.FedoraDatastream;
 import org.fcrepo.client.FedoraException;
 import org.fcrepo.client.FedoraObject;
 import org.fcrepo.client.ReadOnlyException;
 import org.fcrepo.client.impl.FedoraResourceImpl;
-
+import org.fcrepo.kernel.FedoraJcrTypes;
 import org.slf4j.Logger;
 
 
@@ -313,7 +309,16 @@ public class HttpHelper {
      * @throws FedoraException
     **/
     public FedoraResourceImpl loadProperties( final FedoraResourceImpl resource ) throws FedoraException {
-        final String path = resource.getPropertiesPath();
+        final String path;
+        if (resource instanceof FedoraDatastream) {
+            if (resource.getPath().endsWith("/" + FedoraJcrTypes.FCR_METADATA)) {
+                path = resource.getPath();
+            } else {
+                path = resource.getPropertiesPath();
+            }
+        } else {
+            path = resource.getPropertiesPath();
+        }
         final HttpGet get = createGetMethod(path, null);
         if (resource instanceof FedoraObject) {
             get.addHeader("Prefer", "return=representation; "

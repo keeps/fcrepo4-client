@@ -117,7 +117,7 @@ public class FedoraDatastreamImplTest {
         mockRepository.httpHelper = mockHelper;
 
         when(mockRepository.getRepositoryUrl()).thenReturn(repositoryURL);
-        when(mockRepository.getObject(eq("/test"))).thenReturn(mockObject);
+        when(mockRepository.getObject(eq(path))).thenReturn(mockObject);
         datastream = new FedoraDatastreamImpl(mockRepository, mockHelper, path);
         assertTrue(datastream != null);
 

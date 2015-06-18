@@ -38,6 +38,7 @@ import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.fcrepo.client.FedoraDatastream;
 import org.fcrepo.client.FedoraException;
 import org.fcrepo.client.FedoraRepository;
 import org.fcrepo.client.FedoraResource;
@@ -313,7 +314,14 @@ public class FedoraResourceImpl implements FedoraResource {
 
     @Override
     public void updateProperties(final String sparqlUpdate) throws FedoraException {
-        final HttpPatch patch = httpHelper.createPatchMethod(getPropertiesPath(), sparqlUpdate);
+        final String path;
+        if (this instanceof FedoraDatastream) {
+            path = getPath();
+        } else {
+            path = getPropertiesPath();
+        }
+
+        final HttpPatch patch = httpHelper.createPatchMethod(path, sparqlUpdate);
 
         try {
             final HttpResponse response = httpHelper.execute( patch );
@@ -354,8 +362,14 @@ public class FedoraResourceImpl implements FedoraResource {
     @Override
     public void updateProperties(final InputStream updatedProperties, final String contentType)
             throws FedoraException {
+        final String path;
+        if (this instanceof FedoraDatastream) {
+            path = getPath();
+        } else {
+            path = getPropertiesPath();
+        }
 
-        final HttpPut put = httpHelper.createTriplesPutMethod(getPropertiesPath(), updatedProperties, contentType);
+        final HttpPut put = httpHelper.createTriplesPutMethod(path, updatedProperties, contentType);
 
         try {
             final HttpResponse response = httpHelper.execute( put );

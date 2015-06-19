@@ -217,6 +217,9 @@ public class FedoraDatastreamImpl extends FedoraResourceImpl implements FedoraDa
             final StatusLine status = response.getStatusLine();
 
             if ( status.getStatusCode() == SC_OK) {
+                // FIXME this doesn't look like a good practice, i.e., consume
+                // the stream in an outer method but still having to close the
+                // connection correctly (I've commented out the releaseConnection invocation)
                 return response.getEntity().getContent();
             } else if ( status.getStatusCode() == SC_FORBIDDEN) {
                 LOGGER.error("request for resource {} is not authorized.", uri);
@@ -233,8 +236,8 @@ public class FedoraDatastreamImpl extends FedoraResourceImpl implements FedoraDa
         } catch (final Exception e) {
             LOGGER.error("could not encode URI parameter", e);
             throw new FedoraException(e);
-        } finally {
-            get.releaseConnection();
+            //        } finally {
+            //            get.releaseConnection();
         }
     }
 

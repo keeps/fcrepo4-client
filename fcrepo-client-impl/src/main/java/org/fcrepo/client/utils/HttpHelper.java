@@ -32,6 +32,7 @@ import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.fcrepo.client.BadRequestException;
 import org.fcrepo.client.ForbiddenException;
@@ -57,10 +58,11 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.StandardHttpRequestRetryHandler;
-import org.apache.http.impl.conn.PoolingClientConnectionManager;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.riot.RiotReader;
@@ -112,13 +114,13 @@ public class HttpHelper {
         this.repositoryURL = repositoryURL;
         this.readOnly = readOnly;
 
-        final PoolingClientConnectionManager connMann = new PoolingClientConnectionManager();
+        final PoolingHttpClientConnectionManager connMann = new PoolingHttpClientConnectionManager();
         connMann.setMaxTotal(MAX_VALUE);
         connMann.setDefaultMaxPerRoute(MAX_VALUE);
+        // connMann.closeIdleConnections(0,TimeUnit.SECONDS);
 
-        final DefaultHttpClient httpClient = new DefaultHttpClient(connMann);
-        httpClient.setRedirectStrategy(new DefaultRedirectStrategy());
-        httpClient.setHttpRequestRetryHandler(new StandardHttpRequestRetryHandler(0, false));
+        final CloseableHttpClient httpClient;
+
 
         // If the Fedora instance requires authentication, set it up here
         if (!isBlank(fedoraUsername) && !isBlank(fedoraPassword)) {
@@ -129,7 +131,21 @@ public class HttpHelper {
             credsProvider.setCredentials(new AuthScope(fedoraUri.getHost(), fedoraUri.getPort()),
                                          new UsernamePasswordCredentials(fedoraUsername, fedoraPassword));
 
-            httpClient.setCredentialsProvider(credsProvider);
+            httpClient = HttpClients.custom()
+                    .setConnectionManager(connMann)
+                    .setRedirectStrategy(new DefaultRedirectStrategy())
+                    .setRetryHandler(
+                            new StandardHttpRequestRetryHandler(0, false))
+                    .setDefaultCredentialsProvider(credsProvider)
+                    .build();
+        } else {
+            httpClient = HttpClients
+                    .custom()
+                    .setConnectionManager(connMann)
+                    .setRedirectStrategy(new DefaultRedirectStrategy())
+                    .setRetryHandler(
+                            new StandardHttpRequestRetryHandler(0, false))
+                    .build();
         }
 
         this.httpClient = httpClient;
@@ -366,7 +382,6 @@ public class HttpHelper {
         } catch (final FedoraException e) {
             throw e;
         } catch (final Exception e) {
-            e.printStackTrace();
             LOGGER.info("could not encode URI parameter", e);
             throw new FedoraException(e);
         } finally {

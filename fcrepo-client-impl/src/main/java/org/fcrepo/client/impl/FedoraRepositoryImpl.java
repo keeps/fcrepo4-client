@@ -35,6 +35,7 @@ import org.fcrepo.client.ReadOnlyException;
 import org.fcrepo.client.utils.HttpHelper;
 import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.Map;
@@ -42,6 +43,7 @@ import java.util.Map;
 import static org.apache.http.HttpStatus.SC_CONFLICT;
 import static org.apache.http.HttpStatus.SC_CREATED;
 import static org.apache.http.HttpStatus.SC_FORBIDDEN;
+import static org.apache.http.HttpStatus.SC_NO_CONTENT;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -115,7 +117,7 @@ public class FedoraRepositoryImpl implements FedoraRepository {
                 throw new FedoraException("error checking resource " + uri + ": " + statusCode + " " +
                                           status.getReasonPhrase());
             }
-        } catch (final Exception e) {
+        } catch (final IOException e) {
             LOGGER.error("could not encode URI parameter", e);
             throw new FedoraException(e);
         } finally {
@@ -142,7 +144,7 @@ public class FedoraRepositoryImpl implements FedoraRepository {
             final StatusLine status = response.getStatusLine();
             final int statusCode = status.getStatusCode();
 
-            if (statusCode == SC_CREATED) {
+            if (statusCode == SC_CREATED || statusCode == SC_NO_CONTENT) {
                 return getDatastream(path);
             } else if (statusCode == SC_FORBIDDEN) {
                 LOGGER.error("request to create resource {} is not authorized.", uri);
@@ -155,7 +157,7 @@ public class FedoraRepositoryImpl implements FedoraRepository {
                 throw new FedoraException("error retrieving resource " + uri + ": " + statusCode + " " +
                                                   status.getReasonPhrase());
             }
-        } catch (final Exception e) {
+        } catch (final IOException e) {
             LOGGER.error("could not encode URI parameter", e);
             throw new FedoraException(e);
         } finally {
@@ -184,7 +186,7 @@ public class FedoraRepositoryImpl implements FedoraRepository {
                 throw new FedoraException("error creating resource " + uri + ": " + statusCode + " " +
                         status.getReasonPhrase());
             }
-        } catch (final Exception e) {
+        } catch (final IOException e) {
             LOGGER.error("Error making or building PUT request.", e);
             throw new FedoraException(e);
         } finally {
@@ -214,7 +216,7 @@ public class FedoraRepositoryImpl implements FedoraRepository {
                 throw new FedoraException("error retrieving resource " + uri + ": " + statusCode + " " +
                                                   status.getReasonPhrase());
             }
-        } catch (final Exception e) {
+        } catch (final IOException e) {
             LOGGER.error("could not encode URI parameter", e);
             throw new FedoraException(e);
         } finally {

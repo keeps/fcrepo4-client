@@ -18,49 +18,41 @@ package org.fcrepo.client.impl;
 import static org.apache.http.HttpStatus.SC_CONFLICT;
 import static org.apache.http.HttpStatus.SC_CREATED;
 import static org.apache.http.HttpStatus.SC_FORBIDDEN;
-import static org.apache.http.HttpStatus.SC_NO_CONTENT;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
+import static org.apache.http.HttpStatus.SC_NO_CONTENT;
 import static org.apache.http.HttpStatus.SC_OK;
-
-import static com.hp.hpl.jena.rdf.model.ResourceFactory.createProperty;
-
 import static org.fcrepo.kernel.api.RdfLexicon.DESCRIBES;
-import static org.fcrepo.kernel.api.RdfLexicon.HAS_ORIGINAL_NAME;
+import static org.fcrepo.kernel.api.RdfLexicon.HAS_MESSAGE_DIGEST;
 import static org.fcrepo.kernel.api.RdfLexicon.HAS_MIME_TYPE;
+import static org.fcrepo.kernel.api.RdfLexicon.HAS_ORIGINAL_NAME;
 import static org.fcrepo.kernel.api.RdfLexicon.HAS_SIZE;
-import static org.fcrepo.kernel.api.RdfLexicon.REPOSITORY_NAMESPACE;
-
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import org.fcrepo.client.ForbiddenException;
-import org.fcrepo.client.NotFoundException;
-
-import com.hp.hpl.jena.graph.Node;
-import com.hp.hpl.jena.graph.NodeFactory;
-import com.hp.hpl.jena.graph.Graph;
-import com.hp.hpl.jena.graph.Triple;
-import com.hp.hpl.jena.rdf.model.Property;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
-
 import org.apache.jena.atlas.lib.NotImplemented;
-
 import org.fcrepo.client.FedoraContent;
 import org.fcrepo.client.FedoraDatastream;
 import org.fcrepo.client.FedoraException;
 import org.fcrepo.client.FedoraObject;
 import org.fcrepo.client.FedoraRepository;
+import org.fcrepo.client.ForbiddenException;
+import org.fcrepo.client.NotFoundException;
 import org.fcrepo.client.utils.HttpHelper;
-
 import org.fcrepo.kernel.api.FedoraJcrTypes;
 import org.slf4j.Logger;
+
+import com.hp.hpl.jena.graph.Graph;
+import com.hp.hpl.jena.graph.Node;
+import com.hp.hpl.jena.graph.NodeFactory;
+import com.hp.hpl.jena.graph.Triple;
+import com.hp.hpl.jena.rdf.model.Property;
 
 /**
  * A Fedora Datastream Impl.
@@ -70,7 +62,6 @@ import org.slf4j.Logger;
  */
 public class FedoraDatastreamImpl extends FedoraResourceImpl implements FedoraDatastream {
     private static final Logger LOGGER = getLogger(FedoraDatastreamImpl.class);
-    protected static final Property REST_API_DIGEST = createProperty(REPOSITORY_NAMESPACE + "digest");
     private boolean hasContent;
     private Node contentSubject;
     private final String contentPath;
@@ -124,7 +115,7 @@ public class FedoraDatastreamImpl extends FedoraResourceImpl implements FedoraDa
 
     @Override
     public URI getContentDigest() throws FedoraException {
-        final Node contentDigest = getObjectValue( REST_API_DIGEST );
+        final Node contentDigest = getObjectValue( HAS_MESSAGE_DIGEST );
         try {
             if ( contentDigest == null ) {
                 return null;

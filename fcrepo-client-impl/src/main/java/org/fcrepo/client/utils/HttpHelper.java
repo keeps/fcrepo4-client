@@ -72,7 +72,7 @@ import org.fcrepo.client.FedoraException;
 import org.fcrepo.client.FedoraObject;
 import org.fcrepo.client.ReadOnlyException;
 import org.fcrepo.client.impl.FedoraResourceImpl;
-import org.fcrepo.kernel.FedoraJcrTypes;
+import org.fcrepo.kernel.api.FedoraJcrTypes;
 import org.slf4j.Logger;
 
 

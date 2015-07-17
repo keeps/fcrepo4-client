@@ -18,59 +18,54 @@ package org.fcrepo.client.impl;
 import static com.hp.hpl.jena.graph.Factory.createDefaultGraph;
 import static com.hp.hpl.jena.graph.NodeFactory.createURI;
 import static com.hp.hpl.jena.graph.Triple.create;
+import static org.fcrepo.kernel.api.RdfLexicon.CREATED_DATE;
+import static org.fcrepo.kernel.api.RdfLexicon.DESCRIBES;
+import static org.fcrepo.kernel.api.RdfLexicon.HAS_MIME_TYPE;
+import static org.fcrepo.kernel.api.RdfLexicon.HAS_MIXIN_TYPE;
+import static org.fcrepo.kernel.api.RdfLexicon.HAS_ORIGINAL_NAME;
+import static org.fcrepo.kernel.api.RdfLexicon.HAS_SIZE;
+import static org.fcrepo.kernel.api.RdfLexicon.LAST_MODIFIED_DATE;
+import static org.fcrepo.kernel.api.RdfLexicon.WRITABLE;
+import static org.fcrepo.kernel.api.RdfLexicon.HAS_MESSAGE_DIGEST;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.MockitoAnnotations.initMocks;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import static org.fcrepo.kernel.api.RdfLexicon.CREATED_DATE;
-import static org.fcrepo.kernel.api.RdfLexicon.LAST_MODIFIED_DATE;
-import static org.fcrepo.kernel.api.RdfLexicon.HAS_MIXIN_TYPE;
-import static org.fcrepo.kernel.api.RdfLexicon.WRITABLE;
-import static org.fcrepo.kernel.api.RdfLexicon.DESCRIBES;
-import static org.fcrepo.kernel.api.RdfLexicon.HAS_SIZE;
-import static org.fcrepo.kernel.api.RdfLexicon.HAS_MIME_TYPE;
-import static org.fcrepo.kernel.api.RdfLexicon.HAS_ORIGINAL_NAME;
-import static org.fcrepo.client.impl.FedoraDatastreamImpl.REST_API_DIGEST;
-
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.mockito.MockitoAnnotations.initMocks;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.Iterator;
 import java.util.Map;
 
-import com.hp.hpl.jena.graph.Graph;
-import com.hp.hpl.jena.graph.Node;
-import com.hp.hpl.jena.graph.Triple;
-import com.hp.hpl.jena.rdf.model.ResourceFactory;
-
 import org.apache.commons.io.IOUtils;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
-
 import org.fcrepo.client.FedoraContent;
 import org.fcrepo.client.FedoraException;
 import org.fcrepo.client.FedoraObject;
 import org.fcrepo.client.utils.HttpHelper;
 import org.fcrepo.kernel.api.RdfLexicon;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+
+import com.hp.hpl.jena.graph.Graph;
+import com.hp.hpl.jena.graph.Node;
+import com.hp.hpl.jena.graph.Triple;
+import com.hp.hpl.jena.rdf.model.ResourceFactory;
 
 /**
  * Datastream Impl test.
@@ -133,7 +128,7 @@ public class FedoraDatastreamImplTest {
         graph.add( create(contentSubj, HAS_MIME_TYPE.asNode(), ResourceFactory.createPlainLiteral(mimeType).asNode()) );
         graph.add( create(contentSubj, HAS_ORIGINAL_NAME.asNode(),
             ResourceFactory.createPlainLiteral(filename).asNode()) );
-        graph.add( create(contentSubj, REST_API_DIGEST.asNode(), createURI(checksum)) );
+        graph.add( create(contentSubj, HAS_MESSAGE_DIGEST.asNode(), createURI(checksum)) );
         datastream.setGraph( graph );
     }
 

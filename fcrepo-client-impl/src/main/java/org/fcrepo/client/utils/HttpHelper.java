@@ -70,11 +70,13 @@ import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.riot.RiotReader;
 import org.apache.jena.riot.lang.CollectorStreamTriples;
 
+import org.fcrepo.client.FedoraDatastream;
 import org.fcrepo.client.FedoraContent;
 import org.fcrepo.client.FedoraException;
 import org.fcrepo.client.FedoraObject;
 import org.fcrepo.client.ReadOnlyException;
 import org.fcrepo.client.impl.FedoraResourceImpl;
+import org.fcrepo.kernel.api.FedoraJcrTypes;
 
 import org.slf4j.Logger;
 
@@ -313,7 +315,16 @@ public class HttpHelper {
      * @throws FedoraException
     **/
     public FedoraResourceImpl loadProperties( final FedoraResourceImpl resource ) throws FedoraException {
-        final String path = resource.getPropertiesPath();
+        final String path;
+        if (resource instanceof FedoraDatastream) {
+            if (resource.getPath().endsWith("/" + FedoraJcrTypes.FCR_METADATA)) {
+                path = resource.getPath();
+            } else {
+                path = resource.getPropertiesPath();
+            }
+        } else {
+            path = resource.getPropertiesPath();
+        }
         final HttpGet get = createGetMethod(path, null);
         if (resource instanceof FedoraObject) {
             get.addHeader("Prefer", "return=representation; "

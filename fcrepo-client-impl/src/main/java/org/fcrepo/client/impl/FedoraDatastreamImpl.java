@@ -24,7 +24,8 @@ import static org.apache.http.HttpStatus.SC_OK;
 
 import static com.hp.hpl.jena.rdf.model.ResourceFactory.createProperty;
 
-import static org.fcrepo.kernel.api.RdfLexicon.DESCRIBES;
+import static org.fcrepo.kernel.api.RdfLexicon.DESCRIBED_BY;
+import static org.fcrepo.kernel.api.RdfLexicon.HAS_MESSAGE_DIGEST;
 import static org.fcrepo.kernel.api.RdfLexicon.HAS_ORIGINAL_NAME;
 import static org.fcrepo.kernel.api.RdfLexicon.HAS_MIME_TYPE;
 import static org.fcrepo.kernel.api.RdfLexicon.HAS_SIZE;
@@ -84,13 +85,13 @@ public class FedoraDatastreamImpl extends FedoraResourceImpl implements FedoraDa
     public FedoraDatastreamImpl(final FedoraRepository repository, final HttpHelper httpHelper, final String path) {
         super(repository, httpHelper, path);
         contentSubject = NodeFactory.createURI(
-                repository.getRepositoryUrl() + path.substring(0, path.lastIndexOf("/")) );
+                repository.getRepositoryUrl() + path);
     }
 
     @Override
     public void setGraph( final Graph graph ) {
         super.setGraph( graph );
-        hasContent = getTriple( subject, DESCRIBES ) != null;
+        hasContent = getTriple( subject, DESCRIBED_BY ) != null;
     }
 
     @Override
@@ -105,8 +106,7 @@ public class FedoraDatastreamImpl extends FedoraResourceImpl implements FedoraDa
 
     @Override
     public FedoraObject getObject() throws FedoraException {
-        final String contentPath = path.substring(0, path.lastIndexOf("/"));
-        return repository.getObject( contentPath.substring(0, contentPath.lastIndexOf("/")) );
+        return repository.getObject( path.substring(0, path.lastIndexOf("/")) );
     }
 
     @Override
@@ -118,7 +118,7 @@ public class FedoraDatastreamImpl extends FedoraResourceImpl implements FedoraDa
 
     @Override
     public URI getContentDigest() throws FedoraException {
-        final Node contentDigest = getObjectValue( REST_API_DIGEST );
+        final Node contentDigest = getObjectValue( HAS_MESSAGE_DIGEST );
         try {
             if ( contentDigest == null ) {
                 return null;
@@ -211,6 +211,9 @@ public class FedoraDatastreamImpl extends FedoraResourceImpl implements FedoraDa
             final StatusLine status = response.getStatusLine();
 
             if ( status.getStatusCode() == SC_OK) {
+                // FIXME this doesn't look like a good practice, i.e., consume
+                // the stream in an outer method but still having to close the
+                // connection correctly (I've commented out the releaseConnection invocation)
                 return response.getEntity().getContent();
             } else if ( status.getStatusCode() == SC_FORBIDDEN) {
                 LOGGER.error("request for resource {} is not authorized.", uri);
@@ -227,8 +230,8 @@ public class FedoraDatastreamImpl extends FedoraResourceImpl implements FedoraDa
         } catch (final Exception e) {
             LOGGER.error("could not encode URI parameter", e);
             throw new FedoraException(e);
-        } finally {
-            get.releaseConnection();
+            //        } finally {
+            //            get.releaseConnection();
         }
     }
 

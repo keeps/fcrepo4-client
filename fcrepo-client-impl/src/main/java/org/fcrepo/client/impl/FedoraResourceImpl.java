@@ -551,10 +551,9 @@ public class FedoraResourceImpl implements FedoraResource {
               }
             }
           }
-          return versions;
         } else if (status.getStatusCode() == SC_NOT_FOUND) {
           LOGGER.debug("This resource is not versioned or this resource is not exist.");
-          throw new FedoraException("This resource is not versioned or this resource is not exist.");
+          throw new NotFoundException("This resource is not versioned or this resource is not exist.");
         }
       } catch (IOException e) {
         LOGGER.error("Error executing request", e);
@@ -575,7 +574,7 @@ public class FedoraResourceImpl implements FedoraResource {
           LOGGER.debug("The version is reverted successfully.");
         } else if (status.getStatusCode() == SC_NOT_FOUND) {      //ERROR
           LOGGER.debug("The version does not exist.");
-          throw new FedoraException("The version does not exist.");
+          throw new NotFoundException("The version does not exist.");
         } else {
           throw new FedoraException("Unexpected status code: " + status.getStatusCode() + ".");
         }
@@ -595,10 +594,10 @@ public class FedoraResourceImpl implements FedoraResource {
           LOGGER.debug("The version is successfully deleted.");
         } else if (status.getStatusCode() == SC_BAD_REQUEST) {      //ERROR: Trying to remove most recent version...
           LOGGER.debug("Trying to delete the most recent version.");
-          throw new FedoraException("Trying to delete the most recent version.");
+          throw new ForbiddenException("Trying to delete the most recent version.");
         } else if (status.getStatusCode() == SC_NOT_FOUND) {      //ERROR: Version not found...
           LOGGER.debug("The version does not exist.");
-          throw new FedoraException("The version does not exist.");
+          throw new NotFoundException("The version does not exist.");
         } else {
           throw new FedoraException("Unexpected status code: " + status.getStatusCode() + ".");
         }

@@ -528,7 +528,7 @@ public class FedoraResourceImpl implements FedoraResource {
     @Override
     public List<String> getVersionsName() throws FedoraException {
       final HttpGet getVersions = httpHelper.createGetMethod(path + "/fcr:versions", null);
-      List<String> versions = new ArrayList<String>();
+      final List<String> versions = new ArrayList<String>();
       try {
         getVersions.setHeader("Accept", "application/rdf+xml");
         final HttpResponse response = httpHelper.execute(getVersions);
@@ -540,13 +540,13 @@ public class FedoraResourceImpl implements FedoraResource {
           final Lang lang = RDFLanguages.contentTypeToLang(entity.getContentType().getValue().split(":")[0]);
           final CollectorStreamTriples streamTriples = new CollectorStreamTriples();
           RiotReader.parse(entity.getContent(), lang, uri, streamTriples);
-          Iterator<Triple> t = streamTriples.getCollected().iterator();
+          final Iterator<Triple> t = streamTriples.getCollected().iterator();
           while (t.hasNext()) {
-            Triple next = t.next();
-            Node predicate = next.getPredicate();
-            Node object = next.getObject();
-            if(predicate.isURI()){
-              if(predicate.getURI().endsWith("hasVersionLabel")){
+            final Triple next = t.next();
+            final Node predicate = next.getPredicate();
+            final Node object = next.getObject();
+            if (predicate.isURI()) {
+              if (predicate.getURI().endsWith("hasVersionLabel")) {
                 versions.add(object.getLiteralValue().toString());
               }
             }
@@ -565,9 +565,8 @@ public class FedoraResourceImpl implements FedoraResource {
       return versions;
     }
 
-    
     @Override
-    public void revertToVersion(String version) throws FedoraException {
+    public void revertToVersion(final String version) throws FedoraException {
       final HttpPatch patch = httpHelper.createPatchMethod(path + "/fcr:versions/" + version, "test sparql command");
       try {
         final HttpResponse response = httpHelper.execute(patch);
@@ -578,7 +577,7 @@ public class FedoraResourceImpl implements FedoraResource {
           LOGGER.debug("The version does not exist.");
           throw new FedoraException("The version does not exist.");
         } else {
-          throw new FedoraException("Unexpected status code: "+status.getStatusCode()+".");
+          throw new FedoraException("Unexpected status code: " + status.getStatusCode() + ".");
         }
       } catch (IOException e) {
         LOGGER.error("Error executing request", e);
@@ -587,7 +586,7 @@ public class FedoraResourceImpl implements FedoraResource {
     }
 
     @Override
-    public void deleteVersion(String version) throws FedoraException {
+    public void deleteVersion(final String version) throws FedoraException {
       final HttpDelete delete = httpHelper.createDeleteMethod(path + "/fcr:versions/" + version);
       try {
         final HttpResponse response = httpHelper.execute(delete);
@@ -600,8 +599,8 @@ public class FedoraResourceImpl implements FedoraResource {
         } else if (status.getStatusCode() == SC_NOT_FOUND) {      //ERROR: Version not found...
           LOGGER.debug("The version does not exist.");
           throw new FedoraException("The version does not exist.");
-        } else{
-          throw new FedoraException("Unexpected status code: "+status.getStatusCode()+".");
+        } else {
+          throw new FedoraException("Unexpected status code: " + status.getStatusCode() + ".");
         }
       } catch (IOException e) {
         LOGGER.error("Error executing request", e);

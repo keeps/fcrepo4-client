@@ -322,11 +322,13 @@ public class FedoraRepositoryImpl implements FedoraRepository {
     }
     @Override
     public FedoraObject getObjectVersion(final String path, final String version) throws FedoraException {
-        return (FedoraObject)httpHelper.loadProperties(new FedoraObjectImpl(this, httpHelper, path + "/fcr:versions/" + version));
+        return (FedoraObject)httpHelper.loadProperties(new FedoraObjectImpl(this, httpHelper, path
+          + "/fcr:versions/" + version));
     }
 
     @Override
-    public FedoraDatastream getDatastreamVersion(String path, String version) throws FedoraException {
-      return (FedoraDatastream)httpHelper.loadProperties(new FedoraDatastreamImpl(this, httpHelper, path + "/fcr:versions/" + version));
+    public FedoraDatastream getDatastreamVersion(final String path, final String version) throws FedoraException {
+      return (FedoraDatastream)httpHelper.loadProperties(new FedoraDatastreamImpl(this, httpHelper, path
+        + "/fcr:versions/" + version));
     }
 }

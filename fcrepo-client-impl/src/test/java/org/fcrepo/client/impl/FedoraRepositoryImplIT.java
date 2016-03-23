@@ -51,7 +51,7 @@ public class FedoraRepositoryImplIT {
 
     final static Logger LOGGER = getLogger(FedoraRepositoryImplTest.class);
 
-    public static String FEDORA_CONTEXT = "";
+    public static String FEDORA_CONTEXT = "fcrepo-webapp";
 
     private static String CARGO_PORT = System.getProperty("fcrepo.dynamic.test.port", "8080");
 
@@ -63,7 +63,7 @@ public class FedoraRepositoryImplIT {
 
     @Before
     public void setUp() throws FedoraException {
-        repo = new FedoraRepositoryImpl(getFedoraBaseUrl() + "rest/");
+        repo = new FedoraRepositoryImpl(getFedoraBaseUrl() + "/rest/");
     }
 
     @Test

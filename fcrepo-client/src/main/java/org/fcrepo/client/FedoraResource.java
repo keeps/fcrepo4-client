@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 
 import com.hp.hpl.jena.graph.Triple;
 
@@ -134,5 +135,26 @@ public interface FedoraResource {
      * Remove tombstone located at given path
      */
     public void removeTombstone(final String path) throws FedoraException;
+    
+    /**
+     * Return the list of version for this Resource
+     * @return A List of String
+     * @throws FedoraException
+     */
+    public List<String> getVersionsName() throws FedoraException;
+
+    /**
+     * Revert to a previous version of an object
+     * @param version The version to go back to
+     * @throws FedoraException
+     */
+    public void revertToVersion(String version) throws FedoraException;
+
+    /**
+     * Delete a previous version of an object
+     * @param version The version to delete
+     * @throws FedoraException
+     */
+    public void deleteVersion(String version) throws FedoraException;
 
 }

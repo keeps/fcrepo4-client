@@ -137,4 +137,18 @@ public interface FedoraRepository {
      * Check whether this repository is writable.
     **/
     public boolean isWritable();
+    
+    /**
+     * Get an existing Object.
+     * @param path The Object path.
+     * @param version The Object version.
+    **/
+    public FedoraObject getObjectVersion( String path, String version ) throws FedoraException;
+
+    /**
+     * Get an existing Datastream.
+     * @param path The Datastream path.
+     * @param version The Datastream version.
+    **/
+    public FedoraDatastream getDatastreamVersion( String path, String version ) throws FedoraException;
 }

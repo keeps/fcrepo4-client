@@ -19,25 +19,35 @@ import static org.apache.http.HttpStatus.SC_CONFLICT;
 import static org.apache.http.HttpStatus.SC_FORBIDDEN;
 import static org.apache.http.HttpStatus.SC_NO_CONTENT;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
+import static org.apache.http.HttpStatus.SC_OK;
+import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFLanguages;
+import org.apache.jena.riot.RiotReader;
+import org.apache.jena.riot.lang.CollectorStreamTriples;
 import org.fcrepo.client.FedoraException;
 import org.fcrepo.client.FedoraRepository;
 import org.fcrepo.client.FedoraResource;
@@ -513,6 +523,90 @@ public class FedoraResourceImpl implements FedoraResource {
      */
     public String getPropertiesPath() {
         return path;
+    }
+
+    @Override
+    public List<String> getVersionsName() throws FedoraException {
+      final HttpGet getVersions = httpHelper.createGetMethod(path + "/fcr:versions", null);
+      List<String> versions = new ArrayList<String>();
+      try {
+        getVersions.setHeader("Accept", "application/rdf+xml");
+        final HttpResponse response = httpHelper.execute(getVersions);
+        final StatusLine status = response.getStatusLine();
+        final String uri = getVersions.getURI().toString();
+
+        if (status.getStatusCode() == SC_OK) {
+          final HttpEntity entity = response.getEntity();
+          final Lang lang = RDFLanguages.contentTypeToLang(entity.getContentType().getValue().split(":")[0]);
+          final CollectorStreamTriples streamTriples = new CollectorStreamTriples();
+          RiotReader.parse(entity.getContent(), lang, uri, streamTriples);
+          Iterator<Triple> t = streamTriples.getCollected().iterator();
+          while (t.hasNext()) {
+            Triple next = t.next();
+            Node predicate = next.getPredicate();
+            Node object = next.getObject();
+            if(predicate.isURI()){
+              if(predicate.getURI().endsWith("hasVersionLabel")){
+                versions.add(object.getLiteralValue().toString());
+              }
+            }
+          }
+          return versions;
+        } else if (status.getStatusCode() == SC_NOT_FOUND) {
+          LOGGER.debug("This resource is not versioned or this resource is not exist.");
+          throw new FedoraException("This resource is not versioned or this resource is not exist.");
+        }
+      } catch (IOException e) {
+        LOGGER.error("Error executing request", e);
+        throw new FedoraException(e);
+      } finally {
+        getVersions.releaseConnection();
+      }
+      return versions;
+    }
+
+    
+    @Override
+    public void revertToVersion(String version) throws FedoraException {
+      final HttpPatch patch = httpHelper.createPatchMethod(path + "/fcr:versions/" + version, "test sparql command");
+      try {
+        final HttpResponse response = httpHelper.execute(patch);
+        final StatusLine status = response.getStatusLine();
+        if (status.getStatusCode() == SC_NO_CONTENT) {    //SUCCESS
+          LOGGER.debug("The version is reverted successfully.");
+        } else if (status.getStatusCode() == SC_NOT_FOUND) {      //ERROR
+          LOGGER.debug("The version does not exist.");
+          throw new FedoraException("The version does not exist.");
+        } else {
+          throw new FedoraException("Unexpected status code: "+status.getStatusCode()+".");
+        }
+      } catch (IOException e) {
+        LOGGER.error("Error executing request", e);
+        throw new FedoraException(e);
+      }
+    }
+
+    @Override
+    public void deleteVersion(String version) throws FedoraException {
+      final HttpDelete delete = httpHelper.createDeleteMethod(path + "/fcr:versions/" + version);
+      try {
+        final HttpResponse response = httpHelper.execute(delete);
+        final StatusLine status = response.getStatusLine();
+        if (status.getStatusCode() == SC_NO_CONTENT) {    //SUCCESS
+          LOGGER.debug("The version is successfully deleted.");
+        } else if (status.getStatusCode() == SC_BAD_REQUEST) {      //ERROR: Trying to remove most recent version...
+          LOGGER.debug("Trying to delete the most recent version.");
+          throw new FedoraException("Trying to delete the most recent version.");
+        } else if (status.getStatusCode() == SC_NOT_FOUND) {      //ERROR: Version not found...
+          LOGGER.debug("The version does not exist.");
+          throw new FedoraException("The version does not exist.");
+        } else{
+          throw new FedoraException("Unexpected status code: "+status.getStatusCode()+".");
+        }
+      } catch (IOException e) {
+        LOGGER.error("Error executing request", e);
+        throw new FedoraException(e);
+      }
     }
 
 }

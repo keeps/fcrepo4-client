@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.UUID;
 
 import static org.slf4j.LoggerFactory.getLogger;
@@ -50,7 +51,7 @@ public class FedoraRepositoryImplIT {
 
     final static Logger LOGGER = getLogger(FedoraRepositoryImplTest.class);
 
-    public static String FEDORA_CONTEXT = "fcrepo-webapp";
+    public static String FEDORA_CONTEXT = "";
 
     private static String CARGO_PORT = System.getProperty("fcrepo.dynamic.test.port", "8080");
 
@@ -62,7 +63,7 @@ public class FedoraRepositoryImplIT {
 
     @Before
     public void setUp() throws FedoraException {
-        repo = new FedoraRepositoryImpl(getFedoraBaseUrl() + "/rest/");
+        repo = new FedoraRepositoryImpl(getFedoraBaseUrl() + "rest/");
     }
 
     @Test
@@ -279,5 +280,189 @@ public class FedoraRepositoryImplIT {
 
     private String getRandomUniqueId() {
         return UUID.randomUUID().toString();
+    }
+    
+    @Test
+    public void testListVersionsObject() throws FedoraException {
+      final String path = getRandomUniqueId();
+      repo.createObject(path);
+      final FedoraObject object = repo.getObject(path);
+      String sparqlUpdate = "INSERT DATA { <> <" + RdfLexicon.DC_NAMESPACE + "identifier> 'test' . } ";
+      object.updateProperties(sparqlUpdate);
+      object.createVersionSnapshot("V1");
+      sparqlUpdate = "INSERT DATA { <> <" + RdfLexicon.DC_NAMESPACE + "title> 'title' . } ";
+      object.updateProperties(sparqlUpdate);
+      object.createVersionSnapshot("V2");
+      List<String> versions = object.getVersionsName();
+      Assert.assertEquals(2, versions.size());
+      Assert.assertTrue(versions.contains("V1"));
+      Assert.assertTrue(versions.contains("V2"));
+    }
+    
+    @Test
+    public void testListVersionsDataStreams() throws FedoraException, IOException {
+      final String objectPath = getRandomUniqueId();
+      repo.createObject(objectPath);
+      final FedoraObject object = repo.getObject(objectPath);
+      final String datastreamPath = objectPath + "/" + getRandomUniqueId();
+      final FedoraDatastream datastream = repo.createDatastream(datastreamPath, getStringTextContent("content V1"));
+      datastream.createVersionSnapshot("V1Data");
+      datastream.updateContent(getStringTextContent("content V2"));
+      datastream.createVersionSnapshot("V2Data");
+      List<String> versions = datastream.getVersionsName();
+      Assert.assertEquals(2, versions.size());
+      Assert.assertTrue(versions.contains("V1Data"));
+      Assert.assertTrue(versions.contains("V2Data"));
+    }
+    
+    @Test
+    public void testGetVersion() throws FedoraException {
+      final String path = getRandomUniqueId();
+      repo.createObject(path);
+      final FedoraObject object = repo.getObject(path);
+      String sparqlUpdate = "INSERT DATA { <> <" + RdfLexicon.DC_NAMESPACE + "identifier> 'test' . } ";
+      object.updateProperties(sparqlUpdate);
+      object.createVersionSnapshot("V1");
+      sparqlUpdate = "INSERT DATA { <> <" + RdfLexicon.DC_NAMESPACE + "title> 'title' . } ";
+      object.updateProperties(sparqlUpdate);
+      object.createVersionSnapshot("V2"); 
+      final FedoraObject objectV1 = repo.getObjectVersion(path,"V1");
+      final FedoraObject objectV2 = repo.getObjectVersion(path,"V2");
+      
+      Assert.assertTrue(containsProperty(RdfLexicon.DC_NAMESPACE + "identifier", "test",objectV1.getProperties()));
+      Assert.assertTrue(!containsProperty(RdfLexicon.DC_NAMESPACE + "title", "title",objectV1.getProperties()));
+      Assert.assertTrue(containsProperty(RdfLexicon.DC_NAMESPACE + "identifier", "test",objectV2.getProperties()));
+      Assert.assertTrue(containsProperty(RdfLexicon.DC_NAMESPACE + "title", "title",objectV2.getProperties()));
+    }
+    
+    @Test
+    public void testGetVersionDatastream() throws FedoraException, IOException {
+      final String objectPath = getRandomUniqueId();
+      repo.createObject(objectPath);
+      final FedoraObject object = repo.getObject(objectPath);
+      final String datastreamPath = objectPath + "/" + getRandomUniqueId();
+      final FedoraDatastream datastream = repo.createDatastream(datastreamPath, getStringTextContent("content V1"));
+      datastream.createVersionSnapshot("V1Data");
+      datastream.updateContent(getStringTextContent("content V2"));
+      datastream.createVersionSnapshot("V2Data");
+      final FedoraDatastream dataV1 = repo.getDatastreamVersion(datastreamPath, "V1Data");
+      final FedoraDatastream dataV2 = repo.getDatastreamVersion(datastreamPath, "V2Data");
+      final String v1Content = IOUtils.toString(dataV1.getContent(), "UTF-8"); 
+      String v2Content = IOUtils.toString(dataV2.getContent(), "UTF-8"); 
+      Assert.assertEquals("content V1", v1Content);
+      Assert.assertEquals("content V2", v2Content);
+    }
+    
+    /*
+    @Test
+    public void testRevertVersionObject() throws FedoraException, IOException {
+      final String path = getRandomUniqueId();
+      repo.createObject(path);
+      final FedoraObject object = repo.getObject(path);
+      String sparqlUpdate = "INSERT DATA { <> <" + RdfLexicon.DC_NAMESPACE + "identifier> 'test' . } ";
+      object.updateProperties(sparqlUpdate);
+      object.createVersionSnapshot("V1");
+      Assert.assertTrue(containsProperty(RdfLexicon.DC_NAMESPACE + "identifier", "test",object.getProperties()));
+      Assert.assertTrue(!containsProperty(RdfLexicon.DC_NAMESPACE + "title", "title",object.getProperties()));
+      sparqlUpdate = "INSERT DATA { <> <" + RdfLexicon.DC_NAMESPACE + "title> 'title' . } ";
+      object.updateProperties(sparqlUpdate);
+      object.createVersionSnapshot("V2"); 
+      Assert.assertTrue(containsProperty(RdfLexicon.DC_NAMESPACE + "identifier", "test",object.getProperties()));
+      Assert.assertTrue(containsProperty(RdfLexicon.DC_NAMESPACE + "title", "title",object.getProperties()));
+      object.revertToVersion("V1");
+      Assert.assertTrue(containsProperty(RdfLexicon.DC_NAMESPACE + "identifier", "test",object.getProperties()));
+      Assert.assertTrue(!containsProperty(RdfLexicon.DC_NAMESPACE + "title", "title",object.getProperties()));
+    }
+    */
+
+    @Test
+    public void testRevertVersionDatastream() throws FedoraException, IOException {
+      final String objectPath = getRandomUniqueId();
+      repo.createObject(objectPath);
+      final FedoraObject object = repo.getObject(objectPath);
+      final String datastreamPath = objectPath + "/" + getRandomUniqueId();
+      final FedoraDatastream datastream = repo.createDatastream(datastreamPath, getStringTextContent("content V1"));
+      datastream.createVersionSnapshot("V1Data");
+      datastream.updateContent(getStringTextContent("content V2"));
+      datastream.createVersionSnapshot("V2Data");
+      datastream.updateContent(getStringTextContent("content V3"));
+      datastream.createVersionSnapshot("V3Data");
+      datastream.revertToVersion("V2Data");
+      String contentv2 = IOUtils.toString(datastream.getContent(), "UTF-8"); 
+      datastream.revertToVersion("V1Data");
+      String contentv1 = IOUtils.toString(datastream.getContent(), "UTF-8");
+      
+      Assert.assertEquals("content V1", contentv1);
+      Assert.assertEquals("content V2", contentv2);
+    }
+    
+    @Test
+    public void testDeleteVersionObject() throws FedoraException, IOException {
+      final String path = getRandomUniqueId();
+      repo.createObject(path);
+      final FedoraObject object = repo.getObject(path);
+      String sparqlUpdate = "INSERT DATA { <> <" + RdfLexicon.DC_NAMESPACE + "identifier> 'test' . } ";
+      object.updateProperties(sparqlUpdate);
+      object.createVersionSnapshot("V1");
+      Assert.assertTrue(containsProperty(RdfLexicon.DC_NAMESPACE + "identifier", "test",object.getProperties()));
+      Assert.assertTrue(!containsProperty(RdfLexicon.DC_NAMESPACE + "title", "title",object.getProperties()));
+      sparqlUpdate = "INSERT DATA { <> <" + RdfLexicon.DC_NAMESPACE + "title> 'title' . } ";
+      object.updateProperties(sparqlUpdate);
+      object.createVersionSnapshot("V2"); 
+      try {
+        object.deleteVersion("V2");
+        Assert.fail("When removing the last version, an exception should be thrown.");
+      } catch(FedoraException fe) {
+      }
+      object.deleteVersion("V1");
+      List<String> versions = object.getVersionsName();
+      Assert.assertTrue(versions.contains("V2"));
+      Assert.assertTrue(!versions.contains("V1"));
+    }
+    
+    @Test
+    public void testDeleteVersionDatastream() throws FedoraException, IOException {
+      final String objectPath = getRandomUniqueId();
+      repo.createObject(objectPath);
+      final FedoraObject object = repo.getObject(objectPath);
+      final String datastreamPath = objectPath + "/" + getRandomUniqueId();
+      final FedoraDatastream datastream = repo.createDatastream(datastreamPath, getStringTextContent("content V1"));
+      datastream.createVersionSnapshot("V1Data");
+      datastream.updateContent(getStringTextContent("content V2"));
+      datastream.createVersionSnapshot("V2Data");
+      datastream.updateContent(getStringTextContent("content V3"));
+      datastream.createVersionSnapshot("V3Data");
+      
+      try {
+        datastream.deleteVersion("V3Data");
+        Assert.fail("When removing the last version, an exception should be thrown.");
+      } catch(FedoraException fe) {
+      }
+      datastream.deleteVersion("V2Data");
+      List<String> versions = datastream.getVersionsName();
+      Assert.assertTrue(versions.contains("V1Data"));
+      Assert.assertTrue(!versions.contains("V2Data"));
+      Assert.assertTrue(versions.contains("V3Data"));
+      datastream.deleteVersion("V1Data");
+      versions = datastream.getVersionsName();
+      Assert.assertTrue(!versions.contains("V1Data"));
+      Assert.assertTrue(!versions.contains("V2Data"));
+      Assert.assertTrue(versions.contains("V3Data"));
+    }
+    
+    private boolean containsProperty(String predicate, String value, Iterator<Triple> properties) {
+      boolean contains = false;
+      while (properties.hasNext()) {
+        Triple p = properties.next();
+        if (p.getPredicate().getURI().equalsIgnoreCase(predicate)) {
+          if (p.getObject().isLiteral()) {
+            if (p.getObject().getLiteralValue().toString().equalsIgnoreCase(value)) {
+              contains = true;
+              break;
+            }
+          }
+        }
+      }
+      return contains;
     }
 }

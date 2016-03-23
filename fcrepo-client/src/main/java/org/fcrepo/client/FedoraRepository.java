@@ -137,7 +137,7 @@ public interface FedoraRepository {
      * Check whether this repository is writable.
     **/
     public boolean isWritable();
-    
+
     /**
      * Get an existing Object.
      * @param path The Object path.

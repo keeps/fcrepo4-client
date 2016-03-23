@@ -135,7 +135,7 @@ public interface FedoraResource {
      * Remove tombstone located at given path
      */
     public void removeTombstone(final String path) throws FedoraException;
-    
+
     /**
      * Return the list of version for this Resource
      * @return A List of String

@@ -77,6 +77,7 @@ public class RDFSinkFilter extends StreamRDFBase {
             rdfFilter.triple(triple);
         }
         rdfFilter.finish();
+        graphOutput.close();
         return filteredGraph;
     }
 }
